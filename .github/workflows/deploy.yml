@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v2.1.4
+    - uses: oracle-actions/setup-java@v1
+      with:
+        website: jdk.java.net
+        release: 17
+
+    - name: Build frontend
+      run: cd frontend && npm install && npm run build
+
+    - name: Deploy Backend
+      run: cd backend && mvn heroku:deploy -Dmaven.test.skip
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

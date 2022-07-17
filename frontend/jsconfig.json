@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "moduleResolution": "node",
+        "target": "esnext",
+        "module": "esnext",
+        "importsNotUsedAsValues": "error",
+        "isolatedModules": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUncheckedIndexedAccess": true,
+        "strictFunctionTypes": true,
+        "allowUnusedLabels": false,
+        "allowUnreachableCode": false,
+        "allowSyntheticDefaultImports": true,
+        "noImplicitOverride": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "exclude": [ "node_modules" ]
+}
