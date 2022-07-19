@@ -23,7 +23,7 @@ public final class ParsedSolution {
             var txtName = firstSolutionWord.substring(firstSolutionWord.lastIndexOf('/'));
 
             this.missingSolutionChecker = (i, workDirPath) -> !Files.exists(Path.of(workDirPath + "/" + txtName));
-            this.wrongnessChecker = (i, workDirPath) -> IOUtils.doFilesMismatch(workDirPath + "/" + txtName, CACHE_FOLDER + "/" + taskName + "/solutions/" + txtName);
+            this.wrongnessChecker = (i, workDirPath) -> IOUtils.doFilesMismatch(workDirPath + "/" + txtName, TASK_CACHE_FOLDER + "/" + taskName + "/solutions/" + txtName);
             this.wrongSolutionMessage = "Hibás fájlkimenet! Érintett fájl: " + txtName;
         }else{
             this.missingSolutionChecker = (userOutput, i) -> userOutput == null;

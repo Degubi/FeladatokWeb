@@ -2,7 +2,6 @@ package degubi.repositories;
 
 import static degubi.Main.*;
 
-import degubi.*;
 import degubi.model.*;
 import degubi.utils.*;
 import java.io.*;
@@ -21,8 +20,9 @@ public final class TasksRepository {
     public TasksRepository(RestTemplateBuilder templateBuilder) {
         System.out.println("Initializing task cache");
 
-        var zipBytes = Main.ENV == Main.DEV_ENV ? readAllBytesFromFile(Path.of("Feladatok-master.zip"))
-                                                : templateBuilder.build().getForObject("https://github.com/Degubi/Feladatok/archive/master.zip", byte[].class);
+        var localZipPath = Path.of("Feladatok-master.zip");
+        var zipBytes = Files.exists(localZipPath) ? readAllBytesFromFile(localZipPath)
+                                                  : templateBuilder.build().getForObject("https://github.com/Degubi/Feladatok/archive/master.zip", byte[].class);
 
         perCategory = createPerCategoryMap(zipBytes);
         perID = perCategory.values().stream()
@@ -34,17 +34,16 @@ public final class TasksRepository {
 
 
     private static LinkedHashMap<String, List<Task>> createPerCategoryMap(byte[] zipBytes) {
-        var result = new LinkedHashMap<String, List<Task>>();
         var zipEntries = IOUtils.getAllZipEntryNamesTruncated(zipBytes);
         var folders = zipEntries.get(Boolean.TRUE);
         var files = zipEntries.get(Boolean.FALSE);
 
+        var result = new LinkedHashMap<String, List<Task>>();
         result.put("Emelt Érettségi", getTasksForCategory("erettsegi_emelt", "Emelt Szintű Érettségi", folders, files, zipBytes));
         result.put("Emelt Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/emelt", "Emelt Szintű Informatika Ismeretek", folders, files, zipBytes));
         result.put("Közép Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/kozep", "Közép Szintű Informatika Ismeretek", folders, files, zipBytes));
         result.put("OKJ Rendszerüzemeltető", getTasksForCategory("okj/rendszeruzemelteto", "OKJ Rendszerüzemeltető", folders, files, zipBytes));
         result.put("OKJ Szoftverfejlesztő", getTasksForCategory("okj/szoftverfejleszto", "OKJ Szoftverfejlesztő", folders, files, zipBytes));
-
         return result;
     }
 
@@ -63,8 +62,8 @@ public final class TasksRepository {
 
     private static void downloadTaskResourceFiles(Task task, byte[] zipBytes) {
         try {
-            var taskResourcesCacheFolder = Files.createDirectories(Path.of(CACHE_FOLDER + "/" + task.ID + "/resources"));
-            var taskSolutionsCacheFolder = Files.createDirectory(Path.of(CACHE_FOLDER + "/" + task.ID + "/solutions"));
+            var taskResourcesCacheFolder = Files.createDirectories(Path.of(TASK_CACHE_FOLDER + "/" + task.ID + "/resources"));
+            var taskSolutionsCacheFolder = Files.createDirectory(Path.of(TASK_CACHE_FOLDER + "/" + task.ID + "/solutions"));
 
             Arrays.stream(task.resourceFileEntryNames)
                   .forEach(k -> extractResourceFile(taskResourcesCacheFolder, k, zipBytes));

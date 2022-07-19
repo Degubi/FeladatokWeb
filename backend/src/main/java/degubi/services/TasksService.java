@@ -47,21 +47,21 @@ public final class TasksService {
             return new ResponseEntity<>(new String[]{ "Nem található adat ehhez a feladathoz: " + taskID, "Sikertelen tesztelés!" }, HttpStatus.NOT_FOUND);
         }
 
-        var className = classNameMatcher.group(1);
+        var userClassName = classNameMatcher.group(1);
         var workDirPath = Files.createDirectory(Path.of(workDirName));
-        var userSourceFilePath = className + ".java";
+        var userSourceFileName = userClassName + ".java";
 
-        Files.writeString(Path.of(workDirPath + "/" + userSourceFilePath), userSource);
+        Files.writeString(Path.of(workDirPath + "/" + userSourceFileName), userSource);
 
-        var compileOutput = getCompileOutput(workDirName, "javac -encoding utf8 " + userSourceFilePath);
-        if(!compileOutput.isEmpty()) {
+        var compilationOutput = compileUserSource(workDirName, "javac -encoding utf8 " + userSourceFileName);
+        if(!compilationOutput.isEmpty()) {
             IOUtils.deleteDirectory(workDirPath);
-            return new ResponseEntity<>(new String[]{ "Fordítási hiba történt: \n" + compileOutput, "Sikertelen tesztelés!" }, HttpStatus.OK);
+            return new ResponseEntity<>(new String[]{ "Fordítási hiba történt: \n" + compilationOutput, "Sikertelen tesztelés!" }, HttpStatus.OK);
         }
 
         extractResourceFiles(taskID, workDirPath);
 
-        var testConsoleOutput = getTestOutput(workDirName, taskMeta.consoleInput, "java -Dfile.encoding=UTF-8 " + className);
+        var testConsoleOutput = runUserSource(workDirName, taskMeta.consoleInput, "java -Dfile.encoding=UTF-8 " + userClassName);
         if(testConsoleOutput.startsWith("Futtatási hiba") || testConsoleOutput.startsWith("A tesztelés időtúllépés")) {
             IOUtils.deleteDirectory(workDirPath);
             return new ResponseEntity<>(new String[]{ testConsoleOutput, "Sikertelen tesztelés!" }, HttpStatus.OK);
@@ -82,7 +82,7 @@ public final class TasksService {
 
 
     private static void extractResourceFiles(String taskID, Path workDirPath) throws IOException {
-        try(var resourceFilesForTask = Files.list(Path.of(CACHE_FOLDER + "/" + taskID + "/resources"))) {
+        try(var resourceFilesForTask = Files.list(Path.of(TASK_CACHE_FOLDER + "/" + taskID + "/resources"))) {
             resourceFilesForTask.forEach(k -> IOUtils.copyFile(k, Path.of(workDirPath + "/" + k.getFileName())));
         }
     }
@@ -94,8 +94,8 @@ public final class TasksService {
     }
 
     @SuppressWarnings("resource")
-    private static String getTestOutput(String workDirName, String[] consoleInputLines, String command) throws IOException {
-        var testProcess = Runtime.getRuntime().exec(command, null, Path.of(workDirName).toAbsolutePath().toFile());
+    private static String runUserSource(String workDirName, String[] consoleInputLines, String command) throws IOException {
+        var testProcess = Runtime.getRuntime().exec(command, new String[0], Path.of(workDirName).toAbsolutePath().toFile());
         var processStdin = testProcess.getOutputStream();
         processStdin.write(String.join("\n", consoleInputLines).getBytes());
         processStdin.flush();
@@ -114,8 +114,8 @@ public final class TasksService {
     }
 
     @SuppressWarnings("resource")
-    private static String getCompileOutput(String workDirName, String command) throws IOException {
-        var compileProcess = Runtime.getRuntime().exec(command, null, Path.of(workDirName).toAbsolutePath().toFile());
+    private static String compileUserSource(String workDirName, String command) throws IOException {
+        var compileProcess = Runtime.getRuntime().exec(command, new String[0], Path.of(workDirName).toAbsolutePath().toFile());
         var completed = IOUtils.runProcessWithTimeout(compileProcess);
 
         return completed ? IOUtils.getProcessOutputFrom(compileProcess.getErrorStream()) : "A fordítás időtúllépés miatt leállt!";
