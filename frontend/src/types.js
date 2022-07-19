@@ -5,6 +5,7 @@
  *     year: number,
  *     month: string,
  *     subtaskCount: number,
+ *     pdfPath: string,
  *     resourceFileEntryNames: string[],
  *     solutionPaths: { [language: string]: string[] }}
  * } Task

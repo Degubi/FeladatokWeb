@@ -64,7 +64,7 @@
 
                 event.preventDefault();
                 StoredAppState.editorCode = mainEditorContent;
-                showSnackbar('Mentés sikeres!');
+                showSnackbar('Mentés sikeres!', 3);
             }else if(event.key === 'F5') {
                 event.preventDefault();
                 onTestButtonClick();
@@ -128,10 +128,15 @@
 
         editorTabs = [ ...editorTabs, ...resourceTabs ];
         changeEditorTab(editorTabs[0]);
+        showSnackbar('Kattints ide a feladat pdf felnyitásáért!', 10, _ => window.open('https://github.com/Degubi/Feladatok/blob/master/' + task.pdfPath, '_blank'));
     }
 
-    /** @param { string } text */
-    function showSnackbar(text) {
+    /**
+     * @param { string } text
+     * @param { number } timeoutSeconds
+     * @param { (event: MouseEvent) => void } clickListener
+     */
+    function showSnackbar(text, timeoutSeconds, clickListener = null) {
         const snackBar = document.createElement('div');
         snackBar.style.minWidth = '250px';
         snackBar.style.marginLeft = '-125px';
@@ -144,11 +149,16 @@
         snackBar.style.zIndex = '1';
         snackBar.style.left = '50%';
         snackBar.style.bottom = '30px';
-        snackBar.style.animation = 'fadein 0.5s, fadeout 0.5s 5s';
+        snackBar.style.animation = `fadein 0.5s, fadeout 0.5s ${timeoutSeconds}s`;
         snackBar.innerText = text;
 
+        if(clickListener !== null) {
+            snackBar.addEventListener('click', clickListener);
+            snackBar.style.cursor = 'pointer';
+        }
+
         document.body.appendChild(snackBar);
-        setTimeout(() => snackBar.remove(), 5400);
+        setTimeout(() => snackBar.remove(), timeoutSeconds * 1000 + 500);
     }
 
     /** @param { EditorTab } tab */
