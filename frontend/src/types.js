@@ -18,6 +18,7 @@
  *     icon: string,
  *     label: string,
  *     side: 'left' | 'right',
+ *     closeable: boolean,
  *     editorState: {
  *         model: import('monaco-editor').editor.ITextModel,
  *         state: import('monaco-editor').editor.ICodeEditorViewState }

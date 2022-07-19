@@ -12,14 +12,14 @@
     let areThemesVisible = false;
 
     /** @type {{ [category: string]: Task[] }}*/
-    let tasksPerCategory = {};
+    let tasksPerCategory = { 'Feladatok betöltése...': [] };
     /** @type { Task } */
     let activeTask = null;
     let consoleOutput = 'Konzol Kimenet';
     let testOutput = 'Teszt Kimenet';
 
     /** @type { EditorTab }*/
-    const mainEditorTab = { ID: 'main', icon: 'tab_java.png', label: 'Kód', side: 'left', editorState: { model: monaco.editor.createModel('', 'java'), state: null }};
+    const mainEditorTab = { ID: 'main', icon: 'tab_java.png', label: 'Kód', side: 'left', closeable: false, editorState: { model: monaco.editor.createModel('', 'java'), state: null }};
     /** @type { monaco.editor.IStandaloneCodeEditor } */
     let editor = null;
     /** @type { EditorTab[] }*/
@@ -46,7 +46,7 @@
 
         const editorContent = StoredAppState.editorCode ?? 'public class Main {\n' +
                                                            '    // Aktív feladatot a bal oldali "Feladatok" menüből kell választani\n' +
-                                                           '    // Kód mentés: "CTRL + S" lenyomással (oldal újratöltéskor működik csak)\n' +
+                                                           '    // Kód mentés: "CTRL + S" lenyomással\n' +
                                                            '    // Futtatás és tesztelés "F5" gombbal vagy a bal oldali "Tesztelés" gombbal\n' +
                                                            '    public static void main(String[] args) {\n' +
                                                            '        \n' +
@@ -109,7 +109,7 @@
     }
 
     /** @param { Task } task */
-    function setActiveTask(task) {
+    function setActiveTask(task, showPDFMessage = false) {
         StoredAppState.activeTaskID = task.ID;
         activeTask = task;
         activePage = 'editor';
@@ -123,12 +123,15 @@
             .then(k => k.text())
             .then(k => model.setValue(k));
 
-            return { ID: resourceEntryName, icon: 'tab_resource.png', label: resourceFileName, side: 'left', editorState: { model: model, state: null }};
+            return { ID: resourceEntryName, icon: 'tab_resource.png', label: resourceFileName, side: 'left', closeable: true, editorState: { model: model, state: null }};
         });
 
         editorTabs = [ ...editorTabs, ...resourceTabs ];
         changeEditorTab(editorTabs[0]);
-        showSnackbar('Kattints ide a feladat pdf felnyitásáért!', 10, _ => window.open('https://github.com/Degubi/Feladatok/blob/master/' + task.pdfPath, '_blank'));
+
+        if(showPDFMessage) {
+            showSnackbar('Kattints ide a feladat pdf felnyitásáért!', 10, _ => window.open('https://github.com/Degubi/Feladatok/blob/master/' + task.pdfPath, '_blank'));
+        }
     }
 
     /**
@@ -172,6 +175,12 @@
 
         activeEditorTab = tab;
     }
+
+    /** @param { EditorTab } tab */
+    function removeEditorTab(tab) {
+        changeEditorTab(mainEditorTab);
+        editorTabs = editorTabs.filter(k => k !== tab);
+    }
 </script>
 
 
@@ -193,9 +202,9 @@
         {#each editorTabs as editorTab}
             <EditorTabComponent
                 editorTab = {editorTab}
-                mainEditorTab = {mainEditorTab}
                 bind:activeEditorTab
                 on:editorTabClick = {e => changeEditorTab(e.detail)}
+                on:editorTabCloseClick = {e => removeEditorTab(e.detail)}
             ></EditorTabComponent>
         {/each}
     </div>
@@ -204,12 +213,12 @@
         {#each Object.entries(tasksPerCategory) as [ categoryName, tasks ]}
             <TaskCategoryComponent
                 bind:activePage bind:editorTabs
-                on:taskSelected = {e => setActiveTask(e.detail)} categoryName = {categoryName} tasks = {tasks}
+                on:taskSelected = {e => setActiveTask(e.detail, true)} categoryName = {categoryName} tasks = {tasks}
                 on:editorTabChange = {e => changeEditorTab(e.detail)}
             ></TaskCategoryComponent>
         {/each}
     </div>
-    <div id = "outputPanel">
+    <div id = "outputPanel" style = "display: {activePage === 'editor' ? 'block' : 'none'};">
         <div style = "border-right: 1px solid gray;">{consoleOutput}</div>
         <div style = "border-left: 1px solid gray;">{testOutput}</div>
     </div>
@@ -264,9 +273,9 @@
     }
 
     #tasksPanel {
-        height: 70%;
+        height: 100%;
         overflow: auto;
-        padding-bottom: 30px;
+        margin-bottom: 30px;
         padding-left: 30px;
         background-color: var(--panel-background);
         color: var(--text-color);

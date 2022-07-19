@@ -3,8 +3,6 @@
 
     /** @type { EditorTab } */
     export let editorTab;
-    /** @type { EditorTab } */
-    export let mainEditorTab;
     /** @type { EditorTab }*/
     export let activeEditorTab;
 
@@ -18,8 +16,8 @@
     >
     <img src = {`assets/${editorTab.icon}`} alt = "Language icon">
     <div style = "font-size: 14px;">{editorTab.label}</div>
-    {#if editorTab.ID !== mainEditorTab.ID}
-        <div class = "closeButton" title = "Close">x</div>
+    {#if editorTab.closeable}
+        <div class = "closeButton" title = "Close" on:click = {() => dispatch('editorTabCloseClick', editorTab)}>x</div>
     {/if}
 </div>
 

@@ -33,6 +33,7 @@
                 icon: `${solutionLanguage}.png`,
                 label: solutionFilePath.substring(solutionFilePath.lastIndexOf('/') + 1),
                 side: 'right',
+                closeable: true,
                 editorState: { model: model, state: null }
             };
 
@@ -86,13 +87,13 @@
     .taskListDiv {
         display: flex;
         flex-wrap: wrap;
+        gap: 20px;
     }
 
     .taskElementBase {
         width: 180px;
         height: 110px;
         padding: 15px;
-        margin: 10px;
         border: 1px solid gray;
         text-align: center;
         white-space: pre-wrap;
