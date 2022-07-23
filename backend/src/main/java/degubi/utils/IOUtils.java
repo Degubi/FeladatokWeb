@@ -28,6 +28,15 @@ public final class IOUtils {
         }
     }
 
+    public static byte[] readAllBytesFromFile(Path path) {
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void deleteDirectory(Path workDir) {
         try(var toDelete = Files.walk(workDir)) {
             toDelete.sorted(Comparator.reverseOrder())
@@ -99,6 +108,16 @@ public final class IOUtils {
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static void extractZipEntry(Path destinationFolder, String entryName, byte[] zipBytes) {
+        var entryData = IOUtils.getZipEntry(zipBytes, entryName);
+
+        try {
+            Files.write(Path.of(destinationFolder + "/" + entryName.substring(entryName.lastIndexOf('/') + 1)), entryData);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

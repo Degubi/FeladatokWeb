@@ -17,20 +17,24 @@
 
     /**
      * @param { MouseEvent } event
+     * @param { string } solutionFileExtension
      * @param { string[] } solutionFilePaths
-     * @param { string } solutionLanguage
      */
-    function onSolutionButtonClick(event, solutionFilePaths, solutionLanguage) {
+    function onSolutionButtonClick(event, solutionFileExtension, solutionFilePaths) {
         event.stopPropagation();
 
-        const editorLanguage = solutionLanguage === 'py' ? 'python' : solutionLanguage === 'cs' ? 'csharp' : solutionLanguage === 'fsx' ? 'fsharp' : solutionLanguage;
+        const editorLanguage = solutionFileExtension === 'py' ? 'python' :
+                               solutionFileExtension === 'cs' ? 'csharp' :
+                               solutionFileExtension === 'fsx' ? 'fsharp' :
+                               solutionFileExtension === 'rs' ? 'rust' : solutionFileExtension;
+
         const solutionTabs = solutionFilePaths.map(solutionFilePath => {
             const model = monaco.editor.createModel('Várakozás a megoldás kódjára...', editorLanguage);
 
             /** @type { EditorTab } */
             const tab = {
                 ID: solutionFilePath,
-                icon: `${solutionLanguage}.png`,
+                icon: `${solutionFileExtension}.png`,
                 label: solutionFilePath.substring(solutionFilePath.lastIndexOf('/') + 1),
                 side: 'right',
                 closeable: true,
@@ -59,17 +63,18 @@
             on:click = {task.subtaskCount > 0 ? () => dispatch('taskSelected', task): () => {}}
         >{
             `Név: ${task.name}\n` +
-            `Év: ${task.year} ${task.month}\n` +
+            (task.year !== -1 ? `Év: ${task.year} ${task.month}\n` : '') +
             `Feladatok száma: ${task.subtaskCount}\n` +
             `Megoldások:`
         }
             <div>
-                {#each Object.entries(task.solutionPaths) as [ solutionLanguage, solutionResources ]}
+                {#each Object.entries(task.solutionFilePathsPerExtension) as [ extension, filePaths ]}
                     <img
-                        src = { `assets/${solutionLanguage}.png`}
+                        src = { `assets/${extension}.png`}
                         class = "solutionButton"
-                        alt = "Language Icon"
-                        on:click = {e => onSolutionButtonClick(e, solutionResources, solutionLanguage)}
+                        alt = "Megoldás nyelv ikon"
+                        title = "Megoldás megtekintése"
+                        on:click = {e => onSolutionButtonClick(e, extension, filePaths)}
                     >
                 {/each}
             </div>
@@ -91,9 +96,8 @@
     }
 
     .taskElementBase {
-        width: 180px;
-        height: 110px;
-        padding: 15px;
+        width: 210px;
+        padding: 15px 15px 0px 15px;
         border: 1px solid gray;
         text-align: center;
         white-space: pre-wrap;
@@ -117,7 +121,7 @@
 
     .solutionButton {
         height: 28px;
-        margin: 15px 5px 5px 5px;
+        margin: 15px 5px 0px 5px;
     }
 
     .solutionButton:hover {

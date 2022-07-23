@@ -19,7 +19,7 @@
     let testOutput = 'Teszt Kimenet';
 
     /** @type { EditorTab }*/
-    const mainEditorTab = { ID: 'main', icon: 'tab_java.png', label: 'Kód', side: 'left', closeable: false, editorState: { model: monaco.editor.createModel('', 'java'), state: null }};
+    const mainEditorTab = { ID: 'main', icon: 'tab_code.png', label: 'Kód', side: 'left', closeable: false, editorState: { model: monaco.editor.createModel('', 'java'), state: null }};
     /** @type { monaco.editor.IStandaloneCodeEditor } */
     let editor = null;
     /** @type { EditorTab[] }*/
@@ -275,8 +275,7 @@
     #tasksPanel {
         height: 100%;
         overflow: auto;
-        margin-bottom: 30px;
-        padding-left: 30px;
+        padding: 0px 30px 30px 30px;
         background-color: var(--panel-background);
         color: var(--text-color);
     }

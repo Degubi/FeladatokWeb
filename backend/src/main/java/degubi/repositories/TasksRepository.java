@@ -21,7 +21,7 @@ public final class TasksRepository {
         System.out.println("Initializing task cache");
 
         var localZipPath = Path.of("Feladatok-master.zip");
-        var zipBytes = Files.exists(localZipPath) ? readAllBytesFromFile(localZipPath)
+        var zipBytes = Files.exists(localZipPath) ? IOUtils.readAllBytesFromFile(localZipPath)
                                                   : templateBuilder.build().getForObject("https://github.com/Degubi/Feladatok/archive/master.zip", byte[].class);
 
         perCategory = createPerCategoryMap(zipBytes);
@@ -39,61 +39,47 @@ public final class TasksRepository {
         var files = zipEntries.get(Boolean.FALSE);
 
         var result = new LinkedHashMap<String, List<Task>>();
-        result.put("Emelt Érettségi", getTasksForCategory("erettsegi_emelt", "Emelt Szintű Érettségi", folders, files, zipBytes));
-        result.put("Emelt Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/emelt", "Emelt Szintű Informatika Ismeretek", folders, files, zipBytes));
-        result.put("Közép Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/kozep", "Közép Szintű Informatika Ismeretek", folders, files, zipBytes));
-        result.put("OKJ Rendszerüzemeltető", getTasksForCategory("okj/rendszeruzemelteto", "OKJ Rendszerüzemeltető", folders, files, zipBytes));
-        result.put("OKJ Szoftverfejlesztő", getTasksForCategory("okj/szoftverfejleszto", "OKJ Szoftverfejlesztő", folders, files, zipBytes));
+        result.put("Emelt Érettségi", getTasksForCategory("erettsegi_emelt", folders, files, zipBytes));
+        result.put("Emelt Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/emelt", folders, files, zipBytes));
+        result.put("Közép Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/kozep", folders, files, zipBytes));
+        result.put("OKJ Rendszerüzemeltető", getTasksForCategory("okj/rendszeruzemelteto", folders, files, zipBytes));
+        result.put("OKJ Szoftverfejlesztő", getTasksForCategory("okj/szoftverfejleszto", folders, files, zipBytes));
         return result;
     }
 
-    private static List<Task> getTasksForCategory(String categoryPrefix, String typeName, List<String> folders, List<String> files, byte[] zipBytes) {
-        var expectedSlashCount = categoryPrefix.chars().filter(k -> k == '/').count() + 2;
-        var nameSubstringBegin = categoryPrefix.length() + 1;
+    private static List<Task> getTasksForCategory(String categoryFolderPrefix, List<String> folders, List<String> files, byte[] zipBytes) {
+        var taskTopLevelFolderSlashCount = categoryFolderPrefix.chars().filter(k -> k == '/').count() + 2;
 
         return folders.stream()
-                      .filter(k -> k.startsWith(categoryPrefix) && k.chars().filter(l -> l == '/').count() == expectedSlashCount)
-                      .map(k -> k.substring(nameSubstringBegin, k.length() - 1))
-                      .map(k -> new Task(k, categoryPrefix, typeName, files, zipBytes))
-                      .peek(k -> downloadTaskResourceFiles(k, zipBytes))
+                      .filter(k -> k.startsWith(categoryFolderPrefix) && k.chars().filter(l -> l == '/').count() == taskTopLevelFolderSlashCount)
+                      .map(k -> k.substring(categoryFolderPrefix.length() + 1, k.length() - 1))
+                      .map(taskFolderName -> new Task(taskFolderName, getFilesPerExtensionForTask(files, categoryFolderPrefix + '/' + taskFolderName), zipBytes))
+                      .peek(k -> extractTaskResourceFiles(k, zipBytes))
                       .sorted(Comparator.<Task>comparingInt(k -> k.year).reversed())
                       .collect(Collectors.toList());
     }
 
-    private static void downloadTaskResourceFiles(Task task, byte[] zipBytes) {
+    private static Map<String, List<String>> getFilesPerExtensionForTask(List<String> files, String fileNamePrefix) {
+        return files.stream()
+                    .filter(k -> k.startsWith(fileNamePrefix))
+                    .collect(Collectors.groupingBy(k -> k.substring(k.indexOf('.'))));
+    }
+
+    private static void extractTaskResourceFiles(Task task, byte[] zipBytes) {
         try {
             var taskResourcesCacheFolder = Files.createDirectories(Path.of(TASK_CACHE_FOLDER + "/" + task.ID + "/resources"));
             var taskSolutionsCacheFolder = Files.createDirectory(Path.of(TASK_CACHE_FOLDER + "/" + task.ID + "/solutions"));
 
             Arrays.stream(task.resourceFileEntryNames)
-                  .forEach(k -> extractResourceFile(taskResourcesCacheFolder, k, zipBytes));
+                  .forEach(k -> IOUtils.extractZipEntry(taskResourcesCacheFolder, k, zipBytes));
 
             Arrays.stream(task.solutions)
                   .map(k -> k.optionalFileToDownload)
                   .filter(k -> k.startsWith("https"))
-                  .forEach(k -> extractResourceFile(taskSolutionsCacheFolder, k, zipBytes));
+                  .forEach(k -> IOUtils.extractZipEntry(taskSolutionsCacheFolder, k, zipBytes));
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void extractResourceFile(Path folder, String entry, byte[] zipBytes) {
-        var entryData = IOUtils.getZipEntry(zipBytes, entry);
-
-        try {
-            Files.write(Path.of(folder + "/" + entry.substring(entry.lastIndexOf('/') + 1)), entryData);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static byte[] readAllBytesFromFile(Path path) {
-        try {
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

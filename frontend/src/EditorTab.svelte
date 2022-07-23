@@ -13,7 +13,7 @@
     class = "editorTab"
     on:click = {() => dispatch('editorTabClick', editorTab)}
     style = {`float: ${editorTab.side}; background-color: ${activeEditorTab === editorTab ? '#111' : '#252525'}`}
-    >
+>
     <img src = {`assets/${editorTab.icon}`} alt = "Language icon">
     <div style = "font-size: 14px;">{editorTab.label}</div>
     {#if editorTab.closeable}

@@ -7,8 +7,8 @@
  *     subtaskCount: number,
  *     pdfPath: string,
  *     resourceFileEntryNames: string[],
- *     solutionPaths: { [language: string]: string[] }}
- * } Task
+ *     solutionFilePathsPerExtension: { [language: string]: string[] }
+ * }} Task
  *
  * @typedef { 'light' | 'dark' } EditorTheme
  * @typedef { 'tasks' | 'editor' } Page
