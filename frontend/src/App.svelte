@@ -198,6 +198,18 @@
     <button on:click = {onTestButtonClick} style = "background-color: green">Tesztelés</button>
 </div>
 <div id = "content" bind:this = {contentPanel}>
+    {#if activePage === 'tasks'}
+        <div id = "tasksPanel">
+            {#each Object.entries(tasksPerCategory) as [ categoryName, tasks ]}
+                <TaskCategoryComponent
+                    bind:activePage bind:editorTabs
+                    on:taskSelected = {e => setActiveTask(e.detail, true)} categoryName = {categoryName} tasks = {tasks}
+                    on:editorTabChange = {e => changeEditorTab(e.detail)}
+                ></TaskCategoryComponent>
+            {/each}
+        </div>
+    {/if}
+
     <div id = "tabPanel" style = "display: {activePage === 'editor' ? 'block' : 'none'};" >
         {#each editorTabs as editorTab}
             <EditorTabComponent
@@ -209,19 +221,13 @@
         {/each}
     </div>
     <div id = "editorPanel" bind:this = {editorPanel} style = "display: {activePage === 'editor' ? 'block' : 'none'};"></div>
-    <div id = "tasksPanel" style = "display: {activePage === 'tasks' ? 'block' : 'none'};">
-        {#each Object.entries(tasksPerCategory) as [ categoryName, tasks ]}
-            <TaskCategoryComponent
-                bind:activePage bind:editorTabs
-                on:taskSelected = {e => setActiveTask(e.detail, true)} categoryName = {categoryName} tasks = {tasks}
-                on:editorTabChange = {e => changeEditorTab(e.detail)}
-            ></TaskCategoryComponent>
-        {/each}
-    </div>
-    <div id = "outputPanel" style = "display: {activePage === 'editor' ? 'block' : 'none'};">
-        <div style = "border-right: 1px solid gray;">{consoleOutput}</div>
-        <div style = "border-left: 1px solid gray;">{testOutput}</div>
-    </div>
+
+    {#if activePage === 'editor'}
+        <div id = "outputPanel">
+            <div style = "border-right: 1px solid gray;">{consoleOutput}</div>
+            <div style = "border-left: 1px solid gray;">{testOutput}</div>
+        </div>
+    {/if}
 </div>
 
 <style>
