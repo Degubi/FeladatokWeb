@@ -9,7 +9,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.7.1</version>
+            <version>3.1.2</version>
         </dependency>
     </dependencies>
 
@@ -17,15 +17,15 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
                 <configuration>
-                    <release>18</release>
+                    <release>20</release>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.7.1</version>
+                <version>3.1.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -33,18 +33,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.heroku.sdk</groupId>
-                <artifactId>heroku-maven-plugin</artifactId>
-                <version>3.0.4</version>
-                <configuration>
-                    <appName>feladatok-web</appName>
-                    <jdkVersion>18</jdkVersion>
-                    <processTypes>
-                        <web>LANG=en_US.UTF-8 java -Dserver.port=$PORT -jar target/FeladatokBackend-1.0.jar</web>
-                    </processTypes>
-                </configuration>
             </plugin>
         </plugins>
     </build>

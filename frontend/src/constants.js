@@ -1,5 +1,4 @@
-//export const backendURL = 'http://localhost:8080';
-export const backendURL = 'https://feladatok-web.herokuapp.com';
+export const backendURL = 'http://localhost:8080';
 export const repoURL = 'https://raw.githubusercontent.com/Degubi/Feladatok/master';
 
 export class StoredAppState {
