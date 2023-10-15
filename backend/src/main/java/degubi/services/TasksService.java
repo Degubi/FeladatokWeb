@@ -3,7 +3,7 @@ package degubi.services;
 import static degubi.Main.*;
 
 import degubi.model.*;
-import degubi.repositories.*;
+import degubi.repositories.tasks.*;
 import degubi.utils.*;
 import java.io.*;
 import java.nio.file.*;
@@ -28,8 +28,8 @@ public final class TasksService {
     }
 
     @GetMapping
-    public Map<String, List<Task>> listTasks() {
-        return tasks.perCategory;
+    public Map<String, Task[]> listTasks() {
+        return tasks.perCategoryTasks();
     }
 
     @SuppressWarnings("boxing")
@@ -42,7 +42,7 @@ public final class TasksService {
             return new ResponseEntity<>(new String[]{ "Nem található class név a bemeneti fájlban!", "Sikertelen tesztelés!" }, HttpStatus.BAD_REQUEST);
         }
 
-        var taskMeta = tasks.perID.get(taskID);
+        var taskMeta = tasks.perIDTasks().get(taskID);
         if(taskMeta == null) {
             return new ResponseEntity<>(new String[]{ "Nem található adat ehhez a feladathoz: " + taskID, "Sikertelen tesztelés!" }, HttpStatus.NOT_FOUND);
         }

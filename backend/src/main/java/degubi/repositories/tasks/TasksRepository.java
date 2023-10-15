@@ -1,44 +1,26 @@
-package degubi.repositories;
+package degubi.repositories.tasks;
 
 import static degubi.Main.*;
 
-import degubi.model.*;
-import degubi.utils.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.*;
-import org.springframework.boot.web.client.*;
-import org.springframework.stereotype.*;
+import degubi.model.*;
+import degubi.utils.*;
 
-@Repository
-public final class TasksRepository {
+public sealed interface TasksRepository permits GithubTasksRepository, LocalTasksRepository {
+    static final Path LOCAL_TASKS_PATH = Path.of("Feladatok-master.zip");
 
-    public final Map<String, List<Task>> perCategory;
-    public final Map<String, Task> perID;
+    LinkedHashMap<String, Task[]> perCategoryTasks();
+    Map<String, Task> perIDTasks();
 
-    public TasksRepository(RestTemplateBuilder templateBuilder) {
-        System.out.println("Initializing task cache");
-
-        var localZipPath = Path.of("Feladatok-master.zip");
-        var zipBytes = Files.exists(localZipPath) ? IOUtils.readAllBytesFromFile(localZipPath)
-                                                  : templateBuilder.build().getForObject("https://github.com/Degubi/Feladatok/archive/master.zip", byte[].class);
-
-        perCategory = createPerCategoryMap(zipBytes);
-        perID = perCategory.values().stream()
-                           .flatMap(List::stream)
-                           .collect(Collectors.toMap(k -> k.ID, k -> k));
-
-        System.out.println("Task cache initialization done");
-    }
-
-
-    private static LinkedHashMap<String, List<Task>> createPerCategoryMap(byte[] zipBytes) {
+    static LinkedHashMap<String, Task[]> createPerCategoryMap(byte[] zipBytes) {
         var zipEntries = IOUtils.getAllZipEntryNamesTruncated(zipBytes);
         var folders = zipEntries.get(Boolean.TRUE);
         var files = zipEntries.get(Boolean.FALSE);
 
-        var result = new LinkedHashMap<String, List<Task>>();
+        var result = LinkedHashMap.<String, Task[]>newLinkedHashMap(5);
         result.put("Emelt Érettségi", getTasksForCategory("erettsegi_emelt", folders, files, zipBytes));
         result.put("Emelt Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/emelt", folders, files, zipBytes));
         result.put("Közép Informatika Ismeretek", getTasksForCategory("informatika_ismeretek/kozep", folders, files, zipBytes));
@@ -47,7 +29,13 @@ public final class TasksRepository {
         return result;
     }
 
-    private static List<Task> getTasksForCategory(String categoryFolderPrefix, List<String> folders, List<String> files, byte[] zipBytes) {
+    static Map<String, Task> createPerIDMap(LinkedHashMap<String, Task[]> perCategoryMap) {
+        return perCategoryMap.values().stream()
+                             .flatMap(Arrays::stream)
+                             .collect(Collectors.toMap(k -> k.ID, k -> k));
+    }
+
+    private static Task[] getTasksForCategory(String categoryFolderPrefix, List<String> folders, List<String> files, byte[] zipBytes) {
         var taskTopLevelFolderSlashCount = categoryFolderPrefix.chars().filter(k -> k == '/').count() + 2;
 
         return folders.stream()
@@ -56,7 +44,7 @@ public final class TasksRepository {
                       .map(taskFolderName -> new Task(taskFolderName, getFilesPerExtensionForTask(files, categoryFolderPrefix + '/' + taskFolderName), zipBytes))
                       .peek(k -> extractTaskResourceFiles(k, zipBytes))
                       .sorted(Comparator.<Task>comparingInt(k -> k.year).reversed())
-                      .collect(Collectors.toList());
+                      .toArray(Task[]::new);
     }
 
     private static Map<String, List<String>> getFilesPerExtensionForTask(List<String> files, String fileNamePrefix) {
