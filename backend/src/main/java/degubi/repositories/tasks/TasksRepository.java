@@ -6,10 +6,10 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.*;
-import degubi.model.*;
+import degubi.model.task.*;
 import degubi.utils.*;
 
-public sealed interface TasksRepository permits GithubTasksRepository, LocalTasksRepository {
+public interface TasksRepository {
     static final Path LOCAL_TASKS_PATH = Path.of("Feladatok-master.zip");
 
     LinkedHashMap<String, Task[]> perCategoryTasks();

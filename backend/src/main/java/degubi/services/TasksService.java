@@ -2,7 +2,7 @@ package degubi.services;
 
 import static degubi.Main.*;
 
-import degubi.model.*;
+import degubi.model.task.*;
 import degubi.repositories.tasks.*;
 import degubi.utils.*;
 import java.io.*;

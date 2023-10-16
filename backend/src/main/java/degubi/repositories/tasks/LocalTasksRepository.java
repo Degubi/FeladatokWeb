@@ -3,12 +3,12 @@ package degubi.repositories.tasks;
 import java.util.*;
 import org.springframework.context.annotation.*;
 import org.springframework.stereotype.*;
-import degubi.model.*;
+import degubi.model.task.*;
 import degubi.utils.*;
 
 @Repository
 @Conditional(LocalTasksRepositoryCondition.class)
-public final class LocalTasksRepository implements TasksRepository {
+public class LocalTasksRepository implements TasksRepository {
 
     private final LinkedHashMap<String, Task[]> perCategory;
     private final Map<String, Task> perID;

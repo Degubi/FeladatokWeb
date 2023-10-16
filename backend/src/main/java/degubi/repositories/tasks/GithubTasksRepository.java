@@ -4,11 +4,11 @@ import java.util.*;
 import org.springframework.boot.web.client.*;
 import org.springframework.context.annotation.*;
 import org.springframework.stereotype.*;
-import degubi.model.*;
+import degubi.model.task.*;
 
 @Repository
 @Conditional(GithubTasksRepositoryCondition.class)
-public final class GithubTasksRepository implements TasksRepository {
+public class GithubTasksRepository implements TasksRepository {
 
     private final LinkedHashMap<String, Task[]> perCategory;
     private final Map<String, Task> perID;

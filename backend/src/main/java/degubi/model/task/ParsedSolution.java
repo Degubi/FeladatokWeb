@@ -1,4 +1,4 @@
-package degubi.model;
+package degubi.model.task;
 
 import static degubi.Main.*;
 

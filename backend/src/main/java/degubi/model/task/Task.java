@@ -1,4 +1,4 @@
-package degubi.model;
+package degubi.model.task;
 
 import degubi.utils.*;
 import java.util.*;
