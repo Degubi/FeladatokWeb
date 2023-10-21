@@ -3,6 +3,8 @@
     import * as monaco from 'monaco-editor';
     import { repoURL } from './constants.js';
 
+    const dispatch = createEventDispatcher();
+
     /** @type { Page } */
     export let activePage;
     /** @type { EditorTab[] }*/
@@ -12,8 +14,6 @@
     export let categoryName;
     /** @type { Task[] } */
     export let tasks;
-
-    const dispatch = createEventDispatcher();
 
     /**
      * @param { MouseEvent } event

@@ -4,6 +4,7 @@
     import { StoredAppState, backendURL, repoURL } from './constants.js';
     import TaskCategoryComponent from './TaskCategory.svelte';
     import EditorTabComponent from './EditorTab.svelte';
+    import MenuBarComponent from './MenuBar.svelte';
 
     const USER_ID_KEY = 'userID';
 
@@ -11,15 +12,11 @@
     let editorPanel = null;
     /** @type { HTMLDivElement }*/
     let contentPanel = null;
-    let taskFiltersVisible = false;
-    let themesListVisible = false;
 
     /** @type {{ [category: string]: Task[] }}*/
     let allTasksPerCategory = { 'Feladatok betöltése...': [] };
     /** @type {{ [category: string]: Task[] }}*/
     let tasksPerCategoryToDisplay = {};
-    /** @type { (task: Task) => boolean } */
-    let taskFilter = k => true;
     /** @type { Task } */
     let activeTask = null;
     let consoleOutput = 'Konzol Kimenet';
@@ -194,55 +191,23 @@
         changeEditorTab(mainEditorTab);
         editorTabs = editorTabs.filter(k => k !== tab);
     }
-
-    function handleTasksButtonClick() {
-        if(activePage === 'tasks') {
-            taskFiltersVisible = !taskFiltersVisible;
-        }else{
-            activePage = 'tasks';
-        }
-    }
-
-    function updateTasksToDisplay() {
-        const filteredTasks = Object.entries(allTasksPerCategory)
-                                    .map(([ category, tasks ]) => [ category, tasks.filter(taskFilter) ])
-                                    .filter(([ _, tasks ]) => tasks.length > 0);
-
-        tasksPerCategoryToDisplay = Object.fromEntries(filteredTasks);
-    }
 </script>
 
 
-<div id = "sidenav">
-    <p id = "taskNameLabel">{activeTask === null ? 'Nincs aktív feladat' : `Feladat: ${activeTask.name}`}</p>
-    <button on:click = {handleTasksButtonClick}>Feladatok</button>
-    {#if taskFiltersVisible}
-        <div class = "dropdown-container">
-            <div on:click = {() => { taskFilter = k => true; updateTasksToDisplay(); }}>Összes</div>
-            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount > 0; updateTasksToDisplay(); }}>Aktív</div>
-            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount === 0; updateTasksToDisplay(); }}>Inaktív</div>
-            <div on:click = {() => {}}>Teljesített</div>
-            <div on:click = {() => {}}>Teljesítetlen</div>
-        </div>
-    {/if}
-    <button on:click = {() => activePage = 'editor'}>Szerkesztő</button>
-    <button on:click = {() => themesListVisible = !themesListVisible}>Téma</button>
-    {#if themesListVisible}
-        <div class = "dropdown-container">
-            <div on:click = {() => changeTheme('light')}>Világos</div>
-            <div on:click = {() => changeTheme('dark')}>Sötét</div>
-        </div>
-    {/if}
-    <button on:click = {onTestButtonClick} style = "background-color: green">Tesztelés</button>
-</div>
+<MenuBarComponent
+    bind:activePage bind:activeTask bind:allTasksPerCategory bind:tasksPerCategoryToDisplay
+    on:changeTheme = { e => changeTheme(e.detail) }
+    on:runTest = { onTestButtonClick }
+></MenuBarComponent>
 <div id = "content" bind:this = {contentPanel}>
     {#if activePage === 'tasks'}
         <div id = "tasksPanel">
             {#each Object.entries(tasksPerCategoryToDisplay) as [ categoryName, tasks ]}
                 <TaskCategoryComponent
                     bind:activePage bind:editorTabs
-                    on:taskSelected = {e => setActiveTask(e.detail, true)} categoryName = {categoryName} tasks = {tasks}
-                    on:editorTabChange = {e => changeEditorTab(e.detail)}
+                    categoryName = {categoryName} tasks = {tasks}
+                    on:taskSelected = { e => setActiveTask(e.detail, true) }
+                    on:editorTabChange = { e => changeEditorTab(e.detail) }
                 ></TaskCategoryComponent>
             {/each}
         </div>
@@ -269,41 +234,6 @@
 </div>
 
 <style>
-    #sidenav {
-        width: 12vw;
-        height: 100vh;
-        min-width: 250px;
-        background-color: #111;
-        padding-top: 20px;
-        border-right: 3px solid gray;
-    }
-
-    #taskNameLabel {
-        color: white;
-        text-align: center
-    }
-
-    #sidenav button, .dropdown-container div {
-        padding: 8px 8px 8px 16px;
-        font-size: 20px;
-        color: white;
-        display: block;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-    }
-
-    #sidenav button:hover, .dropdown-container div:hover {
-        color: lightgreen;
-    }
-
-    .dropdown-container {
-        background-color: #262626;
-        padding-left: 8px;
-    }
-
     #content {
         width: 88vw;
         height: 100vh;
