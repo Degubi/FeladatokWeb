@@ -6,7 +6,7 @@ import java.util.stream.*;
 
 public final class Task {
     private static final ParsedSolution[] EMPTY_SOLUTION_ARRAY = new ParsedSolution[0];
-    private static final String[] SOLUTION_FILE_EXTENSIONS = { ".java", ".cs", ".py", ".rs", ".fsx" };
+    private static final String[] SOLUTION_FILE_EXTENSIONS = { ".java", ".cs", ".py", ".rs", ".fsx", ".r" };
     private static final String[] RESOURCE_FILE_EXTENSIONS = { ".txt", ".csv" };
     private static int taskOrdinal = 1;
 

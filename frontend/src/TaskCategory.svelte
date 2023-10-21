@@ -67,7 +67,7 @@
             `Feladatok száma: ${task.subtaskCount}\n` +
             `Megoldások:`
         }
-            <div>
+            <div class = "solutionButtonsContainer">
                 {#each Object.entries(task.solutionFilePathsPerExtension) as [ extension, filePaths ]}
                     <img
                         src = { `assets/${extension}.png`}
@@ -119,9 +119,14 @@
         background-color: #262626;
     }
 
+    .solutionButtonsContainer {
+        width: 140px;
+        margin: 15px auto auto auto;
+    }
+
     .solutionButton {
         height: 28px;
-        margin: 15px 5px 0px 5px;
+        margin: 0px 8px 0px 8px;
     }
 
     .solutionButton:hover {

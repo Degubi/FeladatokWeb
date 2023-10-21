@@ -234,6 +234,7 @@
     #sidenav {
         width: 12vw;
         height: 100vh;
+        min-width: 250px;
         background-color: #111;
         padding-top: 20px;
         border-right: 3px solid gray;
