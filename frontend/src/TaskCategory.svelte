@@ -58,13 +58,13 @@
 <div class = "taskListDiv">
     {#each tasks as task}
         <div
-            class = {task.subtaskCount > 0 ? 'taskElementBase taskElementEnabled' : 'taskElementBase taskElementDisabled'}
-            title = {task.subtaskCount > 0 ? task.name : 'Ez a feladat még nem érhető el'}
-            on:click = {task.subtaskCount > 0 ? () => dispatch('taskSelected', task): () => {}}
+            class = {task.totalSubtaskCount > 0 ? 'taskElementBase taskElementEnabled' : 'taskElementBase taskElementDisabled'}
+            title = {task.totalSubtaskCount > 0 ? task.name : 'Ez a feladat még nem érhető el!'}
+            on:click = {task.totalSubtaskCount > 0 ? () => dispatch('taskSelected', task): () => {}}
         >{
             `Név: ${task.name}\n` +
             (task.year !== -1 ? `Év: ${task.year} ${task.month}\n` : '') +
-            `Feladatok száma: ${task.subtaskCount}\n` +
+            `Feladatok száma: ${task.completedSubtaskCount}/${task.totalSubtaskCount}\n` +
             `Megoldások:`
         }
             <div class = "solutionButtonsContainer">

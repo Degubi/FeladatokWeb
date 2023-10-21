@@ -4,7 +4,8 @@
  *     name: string,
  *     year: number,
  *     month: string,
- *     subtaskCount: number,
+ *     totalSubtaskCount: number,
+ *     completedSubtaskCount: number,
  *     pdfPath: string,
  *     resourceFileEntryNames: string[],
  *     solutionFilePathsPerExtension: { [language: string]: string[] }
@@ -24,4 +25,6 @@
  *         state: import('monaco-editor').editor.ICodeEditorViewState }
  *     }
  * } EditorTab
+ *
+ * @typedef {{ consoleOutput: string, testOutput: string, userID: string }} TestResponse
  */

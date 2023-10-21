@@ -5,14 +5,21 @@
     import TaskCategoryComponent from './TaskCategory.svelte';
     import EditorTabComponent from './EditorTab.svelte';
 
+    const USER_ID_KEY = 'userID';
+
     /** @type { HTMLDivElement }*/
     let editorPanel = null;
     /** @type { HTMLDivElement }*/
     let contentPanel = null;
-    let areThemesVisible = false;
+    let taskFiltersVisible = false;
+    let themesListVisible = false;
 
     /** @type {{ [category: string]: Task[] }}*/
-    let tasksPerCategory = { 'Feladatok betöltése...': [] };
+    let allTasksPerCategory = { 'Feladatok betöltése...': [] };
+    /** @type {{ [category: string]: Task[] }}*/
+    let tasksPerCategoryToDisplay = {};
+    /** @type { (task: Task) => boolean } */
+    let taskFilter = k => true;
     /** @type { Task } */
     let activeTask = null;
     let consoleOutput = 'Konzol Kimenet';
@@ -29,17 +36,21 @@
     let activeEditorTab = mainEditorTab;
 
 
-    fetch(`${backendURL}/tasks`, { headers: { 'Content-Type': 'application/json' }})
+    fetch(`${backendURL}/tasks/list`, { headers: { 'Content-Type': 'application/json', 'userID': window.localStorage.getItem(USER_ID_KEY) }})
     .then(k => k.json())
     .then(k => {
-        tasksPerCategory = k;
+        allTasksPerCategory = k;
+        tasksPerCategoryToDisplay = k;
 
         const activeTaskID = StoredAppState.activeTaskID;
         if(activeTaskID !== null) {
-            setActiveTask(Object.values(tasksPerCategory).flatMap(k => k).find(k => k.ID === activeTaskID));
+            setActiveTask(Object.values(allTasksPerCategory).flatMap(k => k).find(k => k.ID === activeTaskID));
         }
     })
-    .catch(_ => tasksPerCategory = { 'Nem sikerült betölteni a feladatokat! :(': [] });
+    .catch(_ => {
+        allTasksPerCategory = { 'Nem sikerült betölteni a feladatokat! :(': [] };
+        tasksPerCategoryToDisplay = allTasksPerCategory;
+    });
 
     onMount(() => {
         changeTheme(StoredAppState.theme);
@@ -75,15 +86,17 @@
 
     async function onTestButtonClick() {
         if(activeTask !== null) {
-            const [ resConsoleOutput, resTestOutput] = await fetch(`${backendURL}/tasks/${activeTask.ID}/java`, {
+            /** @type { TestResponse }*/
+            const response = await fetch(`${backendURL}/tasks/${activeTask.ID}/java`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'userID': window.localStorage.getItem(USER_ID_KEY) },
                 body: editorTabs[0].editorState.model.getValue()
             })
             .then(k => k.json());
 
-            consoleOutput = resConsoleOutput;
-            testOutput = resTestOutput;
+            consoleOutput = response.consoleOutput;
+            testOutput = response.testOutput;
+            window.localStorage.setItem(USER_ID_KEY, response.userID);
         }else{
             window.alert('Nincs feladat kiválasztva!');
         }
@@ -181,15 +194,40 @@
         changeEditorTab(mainEditorTab);
         editorTabs = editorTabs.filter(k => k !== tab);
     }
+
+    function handleTasksButtonClick() {
+        if(activePage === 'tasks') {
+            taskFiltersVisible = !taskFiltersVisible;
+        }else{
+            activePage = 'tasks';
+        }
+    }
+
+    function updateTasksToDisplay() {
+        const filteredTasks = Object.entries(allTasksPerCategory)
+                                    .map(([ category, tasks ]) => [ category, tasks.filter(taskFilter) ])
+                                    .filter(([ _, tasks ]) => tasks.length > 0);
+
+        tasksPerCategoryToDisplay = Object.fromEntries(filteredTasks);
+    }
 </script>
 
 
 <div id = "sidenav">
     <p id = "taskNameLabel">{activeTask === null ? 'Nincs aktív feladat' : `Feladat: ${activeTask.name}`}</p>
-    <button on:click = {() => activePage = 'tasks'}>Feladatok</button>
+    <button on:click = {handleTasksButtonClick}>Feladatok</button>
+    {#if taskFiltersVisible}
+        <div class = "dropdown-container">
+            <div on:click = {() => { taskFilter = k => true; updateTasksToDisplay(); }}>Összes</div>
+            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount > 0; updateTasksToDisplay(); }}>Aktív</div>
+            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount === 0; updateTasksToDisplay(); }}>Inaktív</div>
+            <div on:click = {() => {}}>Teljesített</div>
+            <div on:click = {() => {}}>Teljesítetlen</div>
+        </div>
+    {/if}
     <button on:click = {() => activePage = 'editor'}>Szerkesztő</button>
-    <button on:click = {() => areThemesVisible = !areThemesVisible}>Téma</button>
-    {#if areThemesVisible}
+    <button on:click = {() => themesListVisible = !themesListVisible}>Téma</button>
+    {#if themesListVisible}
         <div class = "dropdown-container">
             <div on:click = {() => changeTheme('light')}>Világos</div>
             <div on:click = {() => changeTheme('dark')}>Sötét</div>
@@ -200,7 +238,7 @@
 <div id = "content" bind:this = {contentPanel}>
     {#if activePage === 'tasks'}
         <div id = "tasksPanel">
-            {#each Object.entries(tasksPerCategory) as [ categoryName, tasks ]}
+            {#each Object.entries(tasksPerCategoryToDisplay) as [ categoryName, tasks ]}
                 <TaskCategoryComponent
                     bind:activePage bind:editorTabs
                     on:taskSelected = {e => setActiveTask(e.detail, true)} categoryName = {categoryName} tasks = {tasks}

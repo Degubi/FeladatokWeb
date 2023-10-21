@@ -3,11 +3,14 @@ package degubi.services;
 import static degubi.Main.*;
 
 import degubi.model.task.*;
+import degubi.model.user.*;
 import degubi.repositories.tasks.*;
+import degubi.repositories.users.*;
 import degubi.utils.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.Map.*;
 import java.util.regex.*;
 import java.util.stream.*;
 import org.springframework.http.*;
@@ -22,29 +25,49 @@ public final class TasksService {
     private static final Pattern newLinePattern = Pattern.compile("\n|\r\n");
 
     private final TasksRepository tasks;
+    private final UserRepository users;
 
-    public TasksService(TasksRepository tasks) {
+    public TasksService(TasksRepository tasks, UserRepository users) {
         this.tasks = tasks;
+        this.users = users;
     }
 
-    @GetMapping
-    public Map<String, Task[]> listTasks() {
-        return tasks.perCategoryTasks();
+    @GetMapping("/list")
+    public Map<String, TaskListResponse[]> listTasks(@RequestHeader String userID) {
+        var userTaskStatuses = userID.equals("null") ? new UserTaskStatus[0] : users.findById(UUID.fromString(userID)).taskStatuses;
+
+        return tasks.perCategoryTasks().entrySet().stream()
+                    .collect(Collectors.toMap(Entry::getKey, e -> createTaskResponse(e.getValue(), userTaskStatuses), (k, l) -> l, LinkedHashMap::new));
+    }
+
+    private static TaskListResponse[] createTaskResponse(Task[] tasks, UserTaskStatus[] userTaskStatuses) {
+        return Arrays.stream(tasks)
+                     .map(k -> new TaskListResponse(k.ID, k.name, k.year, k.month, k.subtaskCount, getCompletedSubtaskCount(k.ID, userTaskStatuses), k.pdfPath, k.resourceFileEntryNames, k.solutionFilePathsPerExtension))
+                     .toArray(TaskListResponse[]::new);
+    }
+
+    private static int getCompletedSubtaskCount(String taskID, UserTaskStatus[] userTaskStatuses) {
+        return Arrays.stream(userTaskStatuses)
+                     .filter(k -> k.taskId.equals(taskID))
+                     .findFirst()
+                     .map(k -> k.completedSubtasks)
+                     .orElse(0);
     }
 
     @SuppressWarnings("boxing")
     @PostMapping("/{taskID}/java")
-    public ResponseEntity<String[]> handleJavaTaskTest(@RequestBody String userSource, @PathVariable String taskID) throws IOException {
+    public ResponseEntity<TestResponse> handleJavaTaskTest(@RequestBody String userSource, @PathVariable String taskID, @RequestHeader String userID) throws IOException {
         var workDirName = "java_" + System.currentTimeMillis();
         var classNameMatcher = classNamePattern.matcher(userSource);
+        var userIDToSend = userID.equals("null") ? users.save(new User(null, new UserTaskStatus[0])).id.toString() : userID;
 
         if(!classNameMatcher.find()) {
-            return new ResponseEntity<>(new String[]{ "Nem található class név a bemeneti fájlban!", "Sikertelen tesztelés!" }, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new TestResponse("Nem található class név a bemeneti fájlban!", "Sikertelen tesztelés!", userIDToSend), HttpStatus.BAD_REQUEST);
         }
 
         var taskMeta = tasks.perIDTasks().get(taskID);
         if(taskMeta == null) {
-            return new ResponseEntity<>(new String[]{ "Nem található adat ehhez a feladathoz: " + taskID, "Sikertelen tesztelés!" }, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new TestResponse("Nem található adat ehhez a feladathoz: " + taskID, "Sikertelen tesztelés!", userIDToSend), HttpStatus.NOT_FOUND);
         }
 
         var userClassName = classNameMatcher.group(1);
@@ -56,7 +79,7 @@ public final class TasksService {
         var compilationOutput = compileUserSource(workDirName, "javac -encoding utf8 " + userSourceFileName);
         if(!compilationOutput.isEmpty()) {
             IOUtils.deleteDirectory(workDirPath);
-            return new ResponseEntity<>(new String[]{ "Fordítási hiba történt: \n" + compilationOutput, "Sikertelen tesztelés!" }, HttpStatus.OK);
+            return new ResponseEntity<>(new TestResponse("Fordítási hiba történt: \n" + compilationOutput, "Sikertelen tesztelés!", userIDToSend), HttpStatus.OK);
         }
 
         extractResourceFiles(taskID, workDirPath);
@@ -64,7 +87,7 @@ public final class TasksService {
         var testConsoleOutput = runUserSource(workDirName, taskMeta.consoleInput, "java -Dfile.encoding=UTF-8 " + userClassName);
         if(testConsoleOutput.startsWith("Futtatási hiba") || testConsoleOutput.startsWith("A tesztelés időtúllépés")) {
             IOUtils.deleteDirectory(workDirPath);
-            return new ResponseEntity<>(new String[]{ testConsoleOutput, "Sikertelen tesztelés!" }, HttpStatus.OK);
+            return new ResponseEntity<>(new TestResponse(testConsoleOutput, "Sikertelen tesztelés!", userIDToSend), HttpStatus.OK);
         }
 
         // Add dummy '999. feladat:' at the end so that the last task output is not skipped
@@ -77,7 +100,7 @@ public final class TasksService {
                                      .collect(Collectors.joining("\n"));
 
         IOUtils.deleteDirectory(workDirPath);
-        return new ResponseEntity<>(new String[]{ testConsoleOutput, outputTestOutput }, HttpStatus.OK);
+        return new ResponseEntity<>(new TestResponse(testConsoleOutput, outputTestOutput, userIDToSend), HttpStatus.OK);
     }
 
 

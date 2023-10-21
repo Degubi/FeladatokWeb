@@ -47,8 +47,8 @@ public final class Task {
             var jsonBytes = IOUtils.getZipEntry(zipBytes, optionalWebJson.get(0));
             var taskMetadata = IOUtils.parseJsonObject(jsonBytes, TaskMetadata.class);
 
-            this.consoleInput = taskMetadata.consoleInput;
-            this.solutions = taskMetadata.solutions.entrySet().stream()
+            this.consoleInput = taskMetadata.consoleInput();
+            this.solutions = taskMetadata.solutions().entrySet().stream()
                                          .map(e -> new ParsedSolution(e.getValue(), Integer.parseInt(e.getKey()), null))
                                          .toArray(ParsedSolution[]::new);
         }else{
