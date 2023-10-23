@@ -34,24 +34,24 @@ public final class TasksService {
 
     @GetMapping("/list")
     public Map<String, TaskListResponse[]> listTasks(@RequestHeader String userID) {
-        var userTaskStatuses = userID.equals("null") ? new UserTaskStatus[0] : users.findById(UUID.fromString(userID)).taskStatuses;
+        var userTaskStatuses = userID.equals("null") ? new ArrayList<UserTaskStatus>() : users.findById(UUID.fromString(userID)).taskStatuses;
 
         return tasks.perCategoryTasks().entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey, e -> createTaskResponse(e.getValue(), userTaskStatuses), (k, l) -> l, LinkedHashMap::new));
     }
 
-    private static TaskListResponse[] createTaskResponse(Task[] tasks, UserTaskStatus[] userTaskStatuses) {
+    private static TaskListResponse[] createTaskResponse(Task[] tasks, List<UserTaskStatus> userTaskStatuses) {
         return Arrays.stream(tasks)
                      .map(k -> new TaskListResponse(k.ID, k.name, k.year, k.month, k.subtaskCount, getCompletedSubtaskCount(k.ID, userTaskStatuses), k.pdfPath, k.resourceFileEntryNames, k.solutionFilePathsPerExtension))
                      .toArray(TaskListResponse[]::new);
     }
 
-    private static int getCompletedSubtaskCount(String taskID, UserTaskStatus[] userTaskStatuses) {
-        return Arrays.stream(userTaskStatuses)
-                     .filter(k -> k.taskId.equals(taskID))
-                     .findFirst()
-                     .map(k -> k.completedSubtasks)
-                     .orElse(0);
+    private static int getCompletedSubtaskCount(String taskID, List<UserTaskStatus> userTaskStatuses) {
+        return userTaskStatuses.stream()
+                               .filter(k -> k.taskId.equals(taskID))
+                               .findFirst()
+                               .map(k -> k.completedSubtasks)
+                               .orElse(0);
     }
 
     @SuppressWarnings("boxing")
@@ -59,7 +59,7 @@ public final class TasksService {
     public ResponseEntity<TestResponse> handleJavaTaskTest(@RequestBody String userSource, @PathVariable String taskID, @RequestHeader String userID) throws IOException {
         var workDirName = "java_" + System.currentTimeMillis();
         var classNameMatcher = classNamePattern.matcher(userSource);
-        var userIDToSend = userID.equals("null") ? users.save(new User(null, new UserTaskStatus[0])).id.toString() : userID;
+        var userIDToSend = userID.equals("null") ? users.save(new User(null, new ArrayList<>(0))).id.toString() : userID;
 
         if(!classNameMatcher.find()) {
             return new ResponseEntity<>(new TestResponse("Nem található class név a bemeneti fájlban!", "Sikertelen tesztelés!", userIDToSend), HttpStatus.BAD_REQUEST);
@@ -95,12 +95,23 @@ public final class TasksService {
         var consoleOutputsPerTask = taskPattern.matcher(formattedConsoleOutput).results()
                                                .collect(Collectors.toMap(k -> Integer.parseInt(k.group(1)), k -> k.group(2)));
 
-        var outputTestOutput = Arrays.stream(taskMeta.solutions)
-                                     .map(k -> runTestForTask(k, consoleOutputsPerTask.get(k.taskOrdinal), workDirPath))
-                                     .collect(Collectors.joining("\n"));
+        var outputTestOutputLines = Arrays.stream(taskMeta.solutions)
+                                          .map(k -> runTestForTask(k, consoleOutputsPerTask.get(k.taskOrdinal), workDirPath))
+                                          .toArray(String[]::new);
 
         IOUtils.deleteDirectory(workDirPath);
-        return new ResponseEntity<>(new TestResponse(testConsoleOutput, outputTestOutput, userIDToSend), HttpStatus.OK);
+
+        var correctTasksCount = Arrays.stream(outputTestOutputLines)
+                                      .filter(k -> k.endsWith(". feladat: helyes"))
+                                      .mapToInt(k -> 1)
+                                      .sum();
+
+        var userData = users.findById(UUID.fromString(userIDToSend));
+        userData.taskStatuses.removeIf(k -> k.taskId.equals(taskID));
+        userData.taskStatuses.add(new UserTaskStatus(null, taskID, correctTasksCount, userData));
+        users.save(userData);
+
+        return new ResponseEntity<>(new TestResponse(testConsoleOutput, String.join("\n", outputTestOutputLines), userIDToSend), HttpStatus.OK);
     }
 
 

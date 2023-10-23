@@ -10,15 +10,15 @@ public final class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     public final UUID id;
-    @OneToMany(mappedBy = "user")
-    public final UserTaskStatus[] taskStatuses;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    public final List<UserTaskStatus> taskStatuses;
 
     protected User() {
         this.id = null;
         this.taskStatuses = null;
     }
 
-    public User(UUID id, UserTaskStatus[] taskStatuses) {
+    public User(UUID id, List<UserTaskStatus> taskStatuses) {
         this.id = id;
         this.taskStatuses = taskStatuses;
     }

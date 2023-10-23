@@ -14,8 +14,6 @@
 
     let themesListVisible = false;
     let taskFiltersVisible = false;
-    /** @type { (task: Task) => boolean } */
-    let taskFilter = k => true;
 
     function handleTaskListButtonClick() {
         if(activePage === 'tasks') {
@@ -26,12 +24,14 @@
         }
     }
 
-    function updateTasksToDisplay() {
+    /** @param { (task: Task) => boolean } taskFilter */
+    function updateTaskFilter(taskFilter) {
         const filteredTasks = Object.entries(allTasksPerCategory)
                                     .map(([ category, tasks ]) => [ category, tasks.filter(taskFilter) ])
                                     .filter(([ _, tasks ]) => tasks.length > 0);
 
         tasksPerCategoryToDisplay = Object.fromEntries(filteredTasks);
+        activePage = 'tasks';
     }
 </script>
 
@@ -41,11 +41,11 @@
     <button on:click = {handleTaskListButtonClick}>Feladatok</button>
     {#if taskFiltersVisible}
         <div class = "dropdown-container">
-            <div on:click = {() => { taskFilter = k => true; updateTasksToDisplay(); }}>Összes</div>
-            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount > 0; updateTasksToDisplay(); }}>Aktív</div>
-            <div on:click = {() => { taskFilter = k => k.totalSubtaskCount === 0; updateTasksToDisplay(); }}>Inaktív</div>
-            <div on:click = {() => {}}>Teljesített</div>
-            <div on:click = {() => {}}>Teljesítetlen</div>
+            <div on:click = {() => updateTaskFilter(k => true) }>Összes</div>
+            <div on:click = {() => updateTaskFilter(k => k.totalSubtaskCount > 0) }>Aktív</div>
+            <div on:click = {() => updateTaskFilter(k => k.totalSubtaskCount === 0) }>Inaktív</div>
+            <div on:click = {() => updateTaskFilter(k => k.totalSubtaskCount > 0 && k.completedSubtaskCount === k.totalSubtaskCount) }>Teljesített</div>
+            <div on:click = {() => updateTaskFilter(k => k.completedSubtaskCount !== k.totalSubtaskCount) }>Teljesítetlen</div>
         </div>
     {/if}
     <button on:click = {() => activePage = 'editor'}>Szerkesztő</button>
