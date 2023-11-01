@@ -55,10 +55,10 @@
 </script>
 
 <div class = "taskCategoryLabel">{categoryName}</div>
-<div class = "taskListDiv">
+<div class = "taskList">
     {#each tasks as task}
         <div
-            class = {task.totalSubtaskCount > 0 ? 'taskElementBase taskElementEnabled' : 'taskElementBase taskElementDisabled'}
+            class = {task.totalSubtaskCount > 0 ? 'taskElement enabledTaskElement' : 'taskElement disabledTaskElement'}
             title = {task.totalSubtaskCount > 0 ? task.name : 'Ez a feladat még nem érhető el!'}
             on:click = {task.totalSubtaskCount > 0 ? () => dispatch('taskSelected', task): () => {}}
         >{
@@ -89,13 +89,13 @@
         font-size: 20px;
     }
 
-    .taskListDiv {
+    .taskList {
         display: flex;
         flex-wrap: wrap;
         gap: 20px;
     }
 
-    .taskElementBase {
+    .taskElement {
         width: 210px;
         padding: 15px 15px 0px 15px;
         border: 1px solid gray;
@@ -104,17 +104,18 @@
         user-select: none;
     }
 
-    .taskElementEnabled {
+    .enabledTaskElement {
         color: white;
+        cursor: pointer;
     }
 
-    .taskElementDisabled {
+    .disabledTaskElement {
         color: gray;
         background-color: #262626;
         cursor: not-allowed;
     }
 
-    .taskElementEnabled:hover {
+    .enabledTaskElement:hover {
         color: lightgreen;
         background-color: #262626;
     }
@@ -122,14 +123,11 @@
     .solutionButtonsContainer {
         width: 140px;
         margin: 15px auto auto auto;
+        cursor: pointer;
     }
 
     .solutionButton {
         height: 28px;
         margin: 0px 8px 0px 8px;
-    }
-
-    .solutionButton:hover {
-        cursor: pointer;
     }
 </style>
