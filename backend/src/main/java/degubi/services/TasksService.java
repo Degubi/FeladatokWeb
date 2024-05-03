@@ -34,7 +34,8 @@ public final class TasksService {
 
     @GetMapping("/list")
     public Map<String, TaskListResponse[]> listTasks(@RequestHeader String userID) {
-        var userTaskStatuses = userID.equals("null") ? new ArrayList<UserTaskStatus>() : users.findById(UUID.fromString(userID)).taskStatuses;
+        var optionalUser = userID.equals("null") ? null : users.findById(UUID.fromString(userID));
+        var userTaskStatuses = optionalUser == null ? new ArrayList<UserTaskStatus>() : optionalUser.taskStatuses;
 
         return tasks.perCategoryTasks().entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey, e -> createTaskResponse(e.getValue(), userTaskStatuses), (k, l) -> l, LinkedHashMap::new));

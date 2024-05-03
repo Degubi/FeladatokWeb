@@ -1,7 +1,5 @@
-.classpath
-.project
-Feladatok-master.zip
 /target/
-src/main/resources/public
 /.settings/
 /taskCache/
+Feladatok-master.zip
+database.db
